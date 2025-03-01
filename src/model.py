@@ -118,3 +118,23 @@ class MusicDownloaderModel:
 
             audio.save(v2_version=3)
             os.remove(cover_filename)
+
+
+class VideoDownloaderModel:
+    def __init__(self):
+        pass
+
+    def download_video(self, url, save_path, progress_hook):
+        ydl_opts = {
+            'format': 'best',
+            'outtmpl': os.path.join(save_path, '%(title)s.%(ext)s'),
+            'progress_hooks': [progress_hook]
+        }
+        # Options for downloading
+        # ydl_opts = {
+        #     'format': 'bestvideo+bestaudio/best',  # Choose a specific format from the list
+        #     'outtmpl': '%(title)s.%(ext)s',  # Save with the title of the video
+        # }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
