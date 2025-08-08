@@ -10,78 +10,94 @@ class MusicDownloaderView:
     def __init__(self, root, controller):
         self.root = root
         self.root.title("Descargador de Música y Video")
-
         self.song_list = []
         self.controller = controller
 
-        self.frame = tk.Frame(root)
-        self.frame.pack(pady=10)
+        # Frame principal
+        self.main_frame = tk.Frame(root)
+        self.main_frame.grid(row=0, column=0, padx=10, pady=10)
 
+        # Entradas: Buscar, Canción, Artista (una debajo de otra)
         self.search_label = tk.Label(
-            self.frame, text="Buscar:", font=("Arial", 12))
-        self.search_label.grid(row=0, column=0)
-        self.search_entry = tk.Entry(self.frame, width=30, font=("Arial", 12))
-        self.search_entry.grid(row=0, column=1)
-
-        self.search_button = tk.Button(
-            self.frame, text="Buscar", font=("Arial", 12), command=self.search)
-        self.search_button.grid(row=0, column=2, padx=5)
+            self.main_frame, text="Buscar:", font=("Arial", 12))
+        self.search_label.grid(row=0, column=0, sticky="w")
+        self.search_entry = tk.Entry(
+            self.main_frame, width=30, font=("Arial", 12))
+        self.search_entry.grid(row=0, column=1, sticky="w")
 
         self.song_label = tk.Label(
-            self.frame, text="Canción:", font=("Arial", 12))
-        self.song_label.grid(row=1, column=0)
-        self.song_entry = tk.Entry(self.frame, width=30, font=("Arial", 12))
-        self.song_entry.grid(row=1, column=1)
+            self.main_frame, text="Canción:", font=("Arial", 12))
+        self.song_label.grid(row=1, column=0, sticky="w")
+        self.song_entry = tk.Entry(
+            self.main_frame, width=30, font=("Arial", 12))
+        self.song_entry.grid(row=1, column=1, sticky="w")
 
         self.artist_label = tk.Label(
-            self.frame, text="Artista:", font=("Arial", 12))
-        self.artist_label.grid(row=2, column=0)
-        self.artist_entry = tk.Entry(self.frame, width=30, font=("Arial", 12))
-        self.artist_entry.grid(row=2, column=1)
+            self.main_frame, text="Artista:", font=("Arial", 12))
+        self.artist_label.grid(row=2, column=0, sticky="w")
+        self.artist_entry = tk.Entry(
+            self.main_frame, width=30, font=("Arial", 12))
+        self.artist_entry.grid(row=2, column=1, sticky="w")
 
+        # Botón buscar a la derecha de las entradas
+        self.search_button = tk.Button(
+            self.main_frame, text="Buscar", font=("Arial", 12), command=self.search)
+        self.search_button.grid(
+            row=0, column=2, rowspan=3, padx=10, sticky="ns")
+
+        # Selección de formato debajo
+        self.format_label = tk.Label(
+            self.main_frame, text="Formato:", font=("Arial", 12))
+        self.format_label.grid(row=3, column=0, sticky="w", pady=(10, 0))
         self.format_var = tk.StringVar(value="mp3")
-        self.format_frame = tk.Frame(root)
-        self.format_frame.pack(pady=5)
-        tk.Label(self.format_frame, text="Formato:",
-                 font=("Arial", 12)).pack(side=tk.LEFT)
-        tk.Radiobutton(self.format_frame, text="MP3 (Audio)", variable=self.format_var,
-                       value="mp3", font=("Arial", 12)).pack(side=tk.LEFT)
-        tk.Radiobutton(self.format_frame, text="MP4 (Video)", variable=self.format_var,
-                       value="mp4", font=("Arial", 12)).pack(side=tk.LEFT)
+        self.mp3_radio = tk.Radiobutton(
+            self.main_frame, text="MP3 (Audio)", variable=self.format_var, value="mp3", font=("Arial", 12))
+        self.mp3_radio.grid(row=3, column=1, sticky="w", pady=(10, 0))
+        self.mp4_radio = tk.Radiobutton(
+            self.main_frame, text="MP4 (Video)", variable=self.format_var, value="mp4", font=("Arial", 12))
+        self.mp4_radio.grid(row=3, column=2, sticky="w", pady=(10, 0))
 
-        self.add_button = tk.Button(self.frame, text="Agregar", font=(
-            "Arial", 12), command=self.add_song)
-        self.add_button.grid(row=3, columnspan=3, pady=5)
+        # Holder para la portada debajo
+        self.cover_label = tk.Label(
+            self.main_frame, text="Portada:", font=("Arial", 12))
+        self.cover_label.grid(row=4, column=0, columnspan=3, pady=(10, 0))
 
-        self.cover_label = tk.Label(root, text="Portada:")
-        self.cover_label.pack()
+        # Listboxes: resultados a la izquierda, descargas a la derecha
+        self.results_label = tk.Label(
+            self.main_frame, text="Resultados de búsqueda:", font=("Arial", 12))
+        self.results_label.grid(row=5, column=0, sticky="w", pady=(10, 0))
+        self.downloads_label = tk.Label(
+            self.main_frame, text="Canciones a descargar:", font=("Arial", 12))
+        self.downloads_label.grid(row=5, column=2, sticky="w", pady=(10, 0))
 
-        # Listbox de resultados de búsqueda
-        self.results_label = tk.Label(root, text="Resultados de búsqueda:")
-        self.results_label.pack()
         self.results_listbox = tk.Listbox(
-            root, width=50, height=10, font=("Arial", 12))
-        self.results_listbox.pack()
-
-        # Listbox de canciones a descargar
-        self.downloads_label = tk.Label(root, text="Canciones a descargar:")
-        self.downloads_label.pack()
+            self.main_frame, width=35, height=10, font=("Arial", 12))
+        self.results_listbox.grid(row=6, column=0, columnspan=2, sticky="w")
         self.downloads_listbox = tk.Listbox(
-            root, width=50, height=10, font=("Arial", 12))
-        self.downloads_listbox.pack()
+            self.main_frame, width=35, height=10, font=("Arial", 12))
+        self.downloads_listbox.grid(row=6, column=2, columnspan=2, sticky="w")
 
-        self.remove_button = tk.Button(root, text="Eliminar", font=(
+        # Botones agregar y eliminar en la misma fila debajo de los listboxes
+        self.add_button = tk.Button(self.main_frame, text="Agregar", font=(
+            "Arial", 12), command=self.add_song)
+        self.add_button.grid(row=7, column=0, pady=10)
+        self.remove_button = tk.Button(self.main_frame, text="Eliminar", font=(
             "Arial", 12), command=self.remove_song)
-        self.remove_button.pack(pady=5)
+        self.remove_button.grid(row=7, column=2, pady=10)
 
-        self.download_button = tk.Button(root, text="Descargar", font=(
+        # Botón descargar debajo
+        self.download_button = tk.Button(self.main_frame, text="Descargar", font=(
             "Arial", 12), command=self.download_thread)
-        self.download_button.pack(pady=10)
+        self.download_button.grid(
+            row=8, column=0, columnspan=4, pady=10, sticky="ew")
 
+        # Progress bar (oculta al inicio)
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
-            root, variable=self.progress_var, maximum=100)
-        self.progress_bar.pack(pady=5, fill=tk.X)
+            self.main_frame, variable=self.progress_var, maximum=100)
+        self.progress_bar.grid(
+            row=9, column=0, columnspan=4, pady=5, sticky="ew")
+        self.progress_bar.grid_remove()
 
     def show_cover(self, image_url):
         try:
@@ -90,7 +106,7 @@ class MusicDownloaderView:
             img = Image.open(BytesIO(img_data))
             img = img.resize((120, 120))
             photo = ImageTk.PhotoImage(img)
-            self.cover_label.config(image=photo)
+            self.cover_label.config(image=photo, text="")
             self.cover_label.image = photo  # Mantener referencia
         except Exception:
             self.cover_label.config(image='', text='Sin imagen')
@@ -143,9 +159,11 @@ class MusicDownloaderView:
         threading.Thread(target=self.start_download).start()
 
     def start_download(self):
+        self.progress_bar.grid()  # Mostrar barra de progreso
         if not hasattr(self, 'save_path') or not self.save_path:
             self.save_path = filedialog.askdirectory()
         if not self.save_path:
+            self.progress_bar.grid_remove()
             return
         format_selected = self.format_var.get()
         for i, song_info in enumerate(self.song_list):
@@ -161,6 +179,7 @@ class MusicDownloaderView:
         self.downloads_listbox.delete(0, tk.END)
         self.song_list.clear()
         self.save_path = None
+        self.progress_bar.grid_remove()  # Ocultar barra al terminar
 
     def progress_hook(self, info):
         if info['status'] == 'downloading':

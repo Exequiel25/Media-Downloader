@@ -16,6 +16,5 @@ if __name__ == "__main__":
     view = MusicDownloaderView(root, controller)
 
     root.title("Music Downloader")
-    root.geometry("720x480")
 
     root.mainloop()
