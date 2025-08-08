@@ -1,140 +1,106 @@
-import yt_dlp
-from youtube_search import YoutubeSearch
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
-from mutagen.mp3 import MP3
-from mutagen.id3 import ID3, APIC, TIT2, TPE1, TPE2, TALB, TDRC, TRCK, TCON, TPUB, error
-import urllib.request
-import os
-import re
+class Song:
+    def __init__(self, title, artist, url):
+        self.title = title
+        self.artist = artist
+        self.url = url
+
+    def __repr__(self):
+        return f"Song(title={self.title}, artist={self.artist}, url={self.url})"
 
 
-class MusicDownloaderModel:
-    def __init__(self, spotify_client_id, spotify_client_secret):
-        self.spotify = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-            client_id=spotify_client_id,
-            client_secret=spotify_client_secret))
+class Video:
+    def __init__(self, title, director, url):
+        self.title = title
+        self.director = director
+        self.url = url
 
-    def clean_title(self, title):
-        title = re.sub(r'\(.*?\)|\[.*?\]', '', title)
-        title = re.sub(
-            r'(?i)official (video|lyrics|audio|music video)', '', title)
-        title = re.sub(r'(?i)lyric video', '', title)
-        title = re.sub(r'[^a-zA-Z0-9 \-]', '', title)
-        return title.strip()
-
-    def custom_title(self, s):
-        return ' '.join(word[0].upper() + word[1:].lower() if word else '' for word in s.split())
-
-    def get_best_youtube_url(self, song, artist, duration):
-        search_query = f"{artist} - {song}"
-        results = YoutubeSearch(search_query, max_results=5).to_dict()
-        best_url = None
-        min_diff = float('inf')
-
-        for result in results:
-            video_duration = result.get('duration', "0:00")
-            video_seconds = sum(
-                int(x) * 60 ** i for i, x in enumerate(reversed(video_duration.split(':'))))
-            diff = abs(video_seconds - duration)
-            if diff < min_diff:
-                min_diff = diff
-                best_url = f"https://www.youtube.com{result['url_suffix']}"
-
-        return best_url
-
-    def download_song(self, song, artist, save_path, progress_hook):
-        results = self.spotify.search(
-            q=f"track:{song} artist:{artist}", type="track", limit=1)
-        if not results['tracks']['items']:
-            raise ValueError(
-                f"No se encontró la canción en Spotify: {song} - {artist}")
-
-        track = results['tracks']['items'][0]
-        correct_title = self.custom_title(track['name'])
-        correct_artist = self.custom_title(track['artists'][0]['name'])
-        album = track['album']['name']
-        album_artist = track['album']['artists'][0]['name']
-        release_year = track['album']['release_date'].split("-")[0]
-        track_number = track['track_number']
-        genre = ', '.join(track['album'].get('genres', [])) or "Unknown"
-        publisher = track['album'].get('label', 'Unknown')
-        duration = track['duration_ms'] // 1000
-        album_cover_url = track['album']['images'][0]['url'] if track['album']['images'] else None
-
-        video_url = self.get_best_youtube_url(
-            correct_title, correct_artist, duration)
-        if not video_url:
-            raise ValueError(
-                f"No se encontró un video adecuado para: {correct_title} - {correct_artist}")
-
-        filename = f"{correct_artist} - {correct_title}"
-        filename = self.clean_title(filename)
-        filepath = os.path.join(save_path, filename)
-
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': filepath,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '320',
-            }],
-            'progress_hooks': [progress_hook]
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.extract_info(video_url, download=True)
-
-        filepath += ".mp3"
-        if os.path.exists(filepath) and album_cover_url:
-            cover_filename = os.path.join(save_path, "cover.jpg")
-            urllib.request.urlretrieve(album_cover_url, cover_filename)
-
-            audio = MP3(filepath, ID3=ID3)
-            try:
-                audio.add_tags()
-            except error:
-                pass
-
-            with open(cover_filename, 'rb') as img:
-                audio.tags.add(APIC(
-                    encoding=3,
-                    mime='image/jpeg',
-                    type=0,
-                    desc='Cover',
-                    data=img.read()
-                ))
-
-            audio.tags.add(TIT2(encoding=3, text=correct_title))
-            audio.tags.add(
-                TPE1(encoding=3, text=[a['name'] for a in track['artists']]))
-            audio.tags.add(TPE2(encoding=3, text=album_artist))
-            audio.tags.add(TALB(encoding=3, text=album))
-            audio.tags.add(TDRC(encoding=3, text=release_year))
-            audio.tags.add(TRCK(encoding=3, text=str(track_number)))
-            audio.tags.add(TCON(encoding=3, text=genre))
-            audio.tags.add(TPUB(encoding=3, text=publisher))
-
-            audio.save(v2_version=3)
-            os.remove(cover_filename)
+    def __repr__(self):
+        return f"Video(title={self.title}, director={self.director}, url={self.url})"
 
 
-class VideoDownloaderModel:
+class MediaManager:
     def __init__(self):
-        pass
+        self.songs = []
+        self.videos = []
 
-    def download_video(self, url, save_path, progress_hook):
-        ydl_opts = {
-            'format': 'best',
-            'outtmpl': os.path.join(save_path, '%(title)s.%(ext)s'),
-            'progress_hooks': [progress_hook]
-        }
-        # Options for downloading
-        # ydl_opts = {
-        #     'format': 'bestvideo+bestaudio/best',  # Choose a specific format from the list
-        #     'outtmpl': '%(title)s.%(ext)s',  # Save with the title of the video
-        # }
+    def add_song(self, song):
+        self.songs.append(song)
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+    def add_video(self, video):
+        self.videos.append(video)
+
+    def find_song(self, title=None, artist=None):
+        results = []
+        for song in self.songs:
+            if (title and title.lower() in song.title.lower()) or (artist and artist.lower() in song.artist.lower()):
+                results.append(song)
+        return results
+
+    def find_video(self, title=None, director=None):
+        results = []
+        for video in self.videos:
+            if (title and title.lower() in video.title.lower()) or (director and director.lower() in video.director.lower()):
+                results.append(video)
+        return results
+
+    def search(self, query):
+        # Busca en canciones y videos por cualquier campo relevante
+        results = []
+        for song in self.songs:
+            if (query.lower() in song.title.lower() or
+                query.lower() in song.artist.lower() or
+                    query.lower() in song.url.lower()):
+                results.append({'type': 'song', 'title': song.title,
+                               'artist': song.artist, 'url': song.url})
+        for video in self.videos:
+            if (query.lower() in video.title.lower() or
+                query.lower() in video.director.lower() or
+                    query.lower() in video.url.lower()):
+                results.append({'type': 'video', 'title': video.title,
+                               'director': video.director, 'url': video.url})
+        return results
+
+    def search_by_artist_title(self, artist, title):
+        # Busca canciones por artista y título
+        results = []
+        for song in self.songs:
+            if artist.lower() in song.artist.lower() and title.lower() in song.title.lower():
+                results.append({'type': 'song', 'title': song.title,
+                               'artist': song.artist, 'url': song.url})
+        return results
+
+    def get_song(self, title, artist):
+        for song in self.songs:
+            if title.lower() in song.title.lower() and artist.lower() in song.artist.lower():
+                return song
+        return None
+
+    def get_video(self, title, director):
+        for video in self.videos:
+            if title.lower() in video.title.lower() and director.lower() in video.director.lower():
+                return video
+        return None
+
+    def clear_media(self):
+        self.songs.clear()
+        self.videos.clear()
+
+    def fetch_spotify_metadata(self, spotify_api, query):
+        results = []
+        search_results = spotify_api.search(q=query, type='track', limit=5)
+        for item in search_results['tracks']['items']:
+            title = item['name']
+            artist = item['artists'][0]['name']
+            url = item['external_urls']['spotify']
+            # Obtener la imagen del álbum
+            cover_url = item['album']['images'][0]['url'] if item['album']['images'] else None
+            song = Song(title, artist, url)
+            self.add_song(song)
+            results.append({
+                'type': 'song',
+                'title': title,
+                'artist': artist,
+                'url': url,
+                'cover_url': cover_url
+            })
+        return results
