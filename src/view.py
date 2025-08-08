@@ -77,6 +77,9 @@ class MusicDownloaderView:
             self.main_frame, width=35, height=10, font=("Arial", 12))
         self.downloads_listbox.grid(row=6, column=2, columnspan=2, sticky="w")
 
+        self.results_listbox.bind("<Double-1>", self.add_song)
+        self.downloads_listbox.bind("<Double-1>", self.remove_song)
+
         # Botones agregar y eliminar en la misma fila debajo de los listboxes
         self.add_button = tk.Button(self.main_frame, text="Agregar", font=(
             "Arial", 12), command=self.add_song)
@@ -137,7 +140,7 @@ class MusicDownloaderView:
             if i == 0 and result.get('cover_url'):
                 self.show_cover(result['cover_url'])
 
-    def add_song(self):
+    def add_song(self, event=None):
         selected = self.results_listbox.curselection()
         if selected:
             index = selected[0]
@@ -148,7 +151,7 @@ class MusicDownloaderView:
             messagebox.showerror(
                 "Error", "Seleccione una canción de los resultados.")
 
-    def remove_song(self):
+    def remove_song(self, event=None):
         selected = self.downloads_listbox.curselection()
         if selected:
             index = selected[0]
