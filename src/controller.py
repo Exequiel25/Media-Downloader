@@ -156,7 +156,8 @@ class MusicDownloaderController:
 
     def search_youtube_playlist(self, playlist_url, max_workers=MAX_WORKERS):
         """Obtiene metadatos de todos los videos de una playlist de YouTube en paralelo y los agrega al modelo."""
-        ydl_opts = {'quiet': True, 'skip_download': True}
+        ydl_opts = {'quiet': True, 'skip_download': True,
+                    'ignoreerrors': True}  # <-- agregado ignoreerrors
         results = []
         seen = set()
         try:
@@ -165,6 +166,8 @@ class MusicDownloaderController:
                 entries = info.get('entries', [])
 
                 def process_entry(entry):
+                    if entry is None:
+                        return  # <-- ignora entradas nulas (errores)
                     key = (entry.get('title', '').lower(),
                            entry.get('uploader', '').lower())
                     if key in seen:

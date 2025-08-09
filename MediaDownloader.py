@@ -46,5 +46,10 @@ if __name__ == "__main__":
     controller = MusicDownloaderController(model, client_id, client_secret)
     view = MusicDownloaderView(root, controller)
 
+    def on_closing():
+        root.quit()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     root.title("Music Downloader")
     root.mainloop()
