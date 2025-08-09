@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "program": "Media Downloader.py",
             // "console": "integratedTerminal"
             "console": "internalConsole"
         },

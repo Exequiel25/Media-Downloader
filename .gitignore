@@ -1,3 +1,6 @@
 secret/
 .cache
 pruebas/
+build/
+dist/
+main.spec
