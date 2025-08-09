@@ -1,67 +1,66 @@
-# Music and Video Downloader
+# Media Downloader
 
-This project is a music and video downloader application that allows users to search for songs or videos by song name, artist name, director, actor, or URL. The application features a user-friendly graphical interface and supports downloading content from various sources.
+Esta aplicación permite buscar y descargar música y videos desde YouTube y Spotify, usando una interfaz gráfica amigable en Tkinter. Puedes buscar por nombre de canción, artista, o directamente por URL de YouTube/Spotify.
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
-music-video-downloader
-├── src
-│   ├── view.py          # GUI implementation for the downloader application
-│   ├── controller.py    # Application logic and download management
-│   ├── model.py         # Data structures for managing song and video information
-│   ├── utils
-│   │   └── search.py    # Utility functions for searching songs or videos
-│   └── types
-│       └── index.py     # Type definitions and interfaces used in the application
-├── requirements.txt      # List of dependencies required for the project
-├── README.md             # Documentation for the project
-└── .gitignore            # Files and directories to be ignored by version control
+Media-Downloader
+├── MediaDownloader.py         # Script principal para ejecutar la aplicación
+├── requirements.txt           # Dependencias necesarias
+├── README.md                  # Documentación del proyecto
+├── .gitignore                 # Exclusiones de git
+├── secret/
+│   └── spotify_secrets.txt    # Claves de la API de Spotify (no versionado)
+├── src/
+│   ├── controller.py          # Lógica de negocio y descargas
+│   ├── model.py               # Estructuras de datos y gestión de canciones
+│   ├── view.py                # Interfaz gráfica (Tkinter)
+│   ├── utils/
+│   │   └── search.py          # Funciones utilitarias de búsqueda
+│   └── types/
+│       └── index.py           # Definiciones de tipos
+└── pruebas/                   # Archivos de prueba (no necesarios para ejecución)
 ```
 
-## Features
+## Características
 
-- Search for songs or videos by:
-  - Song name
-  - Artist name
-  - Director
-  - Actor
-  - URL
-- Add and remove songs or videos from the download list
-- Progress bar to track download status
-- User-friendly interface built with Tkinter
+- Buscar canciones por nombre, artista o URL (YouTube/Spotify)
+- Descargar canciones en formato MP3 o videos en MP4
+- Descarga múltiple en paralelo con barra de progreso
+- Obtención de metadatos y portadas desde Spotify y YouTube
+- Interfaz gráfica intuitiva en español
 
-## Installation
+## Instalación
 
-1. Clone the repository:
+1. Clona el repositorio:
 
    ```
    git clone <repository-url>
-   cd music-video-downloader
+   cd Media-Downloader
    ```
 
-2. Install the required dependencies:
+2. Instala las dependencias:
    ```
    pip install -r requirements.txt
    ```
 
-## Usage
+## Uso
 
-1. Run the application:
+1. Ejecuta la aplicación principal:
 
    ```
-   python src/view.py
+   python MediaDownloader.py
    ```
 
-2. Enter the song or video details in the provided fields.
-3. Click "Agregar" to add the item to the download list.
-4. Select an item from the list and click "Eliminar" to remove it.
-5. Click "Descargar" to start the download process.
+2. Al iniciar, se solicitarán las claves de la API de Spotify si no existen en `secret/spotify_secrets.txt`. Puedes omitirlas, pero no tendrás metadatos avanzados de Spotify.
 
-## Contributing
+3. Usa la interfaz para buscar canciones/videos, agregarlos a la lista de descarga y descargarlos en la carpeta que elijas.
 
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
+## Contribuir
 
-## License
+¡Las contribuciones son bienvenidas! Abre un issue o envía un pull request para mejoras o correcciones.
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+## Licencia
+
+Este proyecto está bajo la licencia MIT. Consulta el archivo LICENSE para
