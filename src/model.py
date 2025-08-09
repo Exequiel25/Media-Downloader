@@ -1,33 +1,20 @@
 class Song:
-    def __init__(self, title, artist, url):
+    def __init__(self, title, artist, url, youtube_url=None):
         self.title = title
         self.artist = artist
-        self.url = url
+        self.url = url  # Puede ser Spotify, etc.
+        self.youtube_url = youtube_url  # Enlace real de YouTube
 
     def __repr__(self):
-        return f"Song(title={self.title}, artist={self.artist}, url={self.url})"
-
-
-class Video:
-    def __init__(self, title, director, url):
-        self.title = title
-        self.director = director
-        self.url = url
-
-    def __repr__(self):
-        return f"Video(title={self.title}, director={self.director}, url={self.url})"
+        return f"Song(title={self.title}, artist={self.artist}, url={self.url}, youtube_url={self.youtube_url})"
 
 
 class MediaManager:
     def __init__(self):
         self.songs = []
-        self.videos = []
 
     def add_song(self, song):
         self.songs.append(song)
-
-    def add_video(self, video):
-        self.videos.append(video)
 
     def find_song(self, title=None, artist=None):
         results = []
@@ -36,54 +23,38 @@ class MediaManager:
                 results.append(song)
         return results
 
-    def find_video(self, title=None, director=None):
-        results = []
-        for video in self.videos:
-            if (title and title.lower() in video.title.lower()) or (director and director.lower() in video.director.lower()):
-                results.append(video)
-        return results
-
     def search(self, query):
-        # Busca en canciones y videos por cualquier campo relevante
         results = []
         for song in self.songs:
             if (query.lower() in song.title.lower() or
                 query.lower() in song.artist.lower() or
                     query.lower() in song.url.lower()):
                 results.append({'type': 'song', 'title': song.title,
-                               'artist': song.artist, 'url': song.url})
-        for video in self.videos:
-            if (query.lower() in video.title.lower() or
-                query.lower() in video.director.lower() or
-                    query.lower() in video.url.lower()):
-                results.append({'type': 'video', 'title': video.title,
-                               'director': video.director, 'url': video.url})
+                               'artist': song.artist, 'url': song.url,
+                                'youtube_url': song.youtube_url})
         return results
 
     def search_by_artist_title(self, artist, title):
-        # Busca canciones por artista y título
         results = []
         for song in self.songs:
             if artist.lower() in song.artist.lower() and title.lower() in song.title.lower():
                 results.append({'type': 'song', 'title': song.title,
-                               'artist': song.artist, 'url': song.url})
+                               'artist': song.artist, 'url': song.url,
+                                'youtube_url': song.youtube_url})
         return results
 
     def get_song(self, title, artist):
         for song in self.songs:
             if title.lower() in song.title.lower() and artist.lower() in song.artist.lower():
-                return song
-        return None
-
-    def get_video(self, title, director):
-        for video in self.videos:
-            if title.lower() in video.title.lower() and director.lower() in video.director.lower():
-                return video
+                return {
+                    'title': song.title,
+                    'artist': song.artist,
+                    'youtube_url': song.youtube_url
+                }
         return None
 
     def clear_media(self):
         self.songs.clear()
-        self.videos.clear()
 
     def fetch_spotify_metadata(self, spotify_api, query):
         results = []
