@@ -162,15 +162,13 @@ class MusicDownloaderView:
         selected = self.results_listbox.curselection()
         if selected:
             index = selected[0]
-            song_info = self.results_listbox.get(index)
+            result = self.controller.last_results[index]
             format_selected = self.format_var.get()
             format_str = "(MP3)" if format_selected == "mp3" else "(MP4)"
-            display_str = f"{format_str} {song_info}"
-            # Guarda como dict para formato individual
-            artist, title = song_info.split(" - ", 1)
+            display_str = f"{format_str} {result.get('artist', '')} - {result.get('title', '')}"
             self.song_list.append({
-                "artist": artist,
-                "title": title,
+                "artist": result.get("artist", ""),
+                "title": result.get("title", ""),
                 "format": format_selected,
                 "display": display_str
             })

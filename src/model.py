@@ -56,6 +56,14 @@ class MediaManager:
     def clear_media(self):
         self.songs.clear()
 
+    def fetch_youtube_metadata(self, metadata):
+        if not metadata:
+            return []
+        # Crear obj con la metadata
+        song = Song(metadata['title'], metadata['artist'],
+                    metadata['youtube_url'], metadata.get('youtube_url'))
+        self.add_song(song)
+
     def fetch_spotify_metadata(self, spotify_api, query):
         results = []
         search_results = spotify_api.search(q=query, type='track', limit=5)

@@ -121,6 +121,7 @@ class MusicDownloaderController:
                 'cover_url': info.get('thumbnail', ''),
                 'youtube_url': url
             }
+            self.model.fetch_youtube_metadata(result)
             return [result]
         except Exception as e:
             print(f"Error obteniendo metadatos de YouTube: {e}")
