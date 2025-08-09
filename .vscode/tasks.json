@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generar ejecutable",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "${workspaceFolder}\\env\\media-downloader\\Scripts\\Activate.ps1; pyinstaller --onefile --windowed \"MediaDownloader.py\""
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
