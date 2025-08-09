@@ -19,8 +19,11 @@ class MusicDownloaderController:
     def search(self, query):
         # Busca localmente
         results = self.model.search(query)
-        # Si hay Spotify disponible, busca también en Spotify y agrega resultados
-        if self.spotify_api:
+        # Si es una url de youtube
+        if query.startswith("https://youtu.be/") or query.startswith("https://www.youtube.com/"):
+            youtube_results = self.search_youtube_url(query)
+            results.extend(youtube_results)
+        elif self.spotify_api:  # Si hay Spotify disponible, busca también en Spotify y agrega resultados
             spotify_results = self.model.fetch_spotify_metadata(
                 self.spotify_api, query)
             results.extend(spotify_results)
@@ -103,6 +106,25 @@ class MusicDownloaderController:
                 ydl.download([url])
         except Exception as e:
             print(f"[ERROR] yt_dlp falló: {e}")
+
+    def search_youtube_url(self, url):
+        """Obtiene metadatos de un video de YouTube por URL."""
+        if not (url.startswith("https://youtu.be/") or url.startswith("https://www.youtube.com/")):
+            return []
+        ydl_opts = {'quiet': True, 'skip_download': True}
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+            result = {
+                'artist': info.get('uploader', ''),
+                'title': info.get('title', ''),
+                'cover_url': info.get('thumbnail', ''),
+                'youtube_url': url
+            }
+            return [result]
+        except Exception as e:
+            print(f"Error obteniendo metadatos de YouTube: {e}")
+            return []
 
     def get_youtube_url(self, title, artist):
         query = f"ytsearch1:{artist} {title}"
