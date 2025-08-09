@@ -41,7 +41,7 @@ class MusicDownloaderView:
 
         # Botón buscar a la derecha de las entradas
         self.search_button = tk.Button(
-            self.main_frame, text="Buscar", font=("Arial", 12), command=self.search)
+            self.main_frame, text="Buscar", font=("Arial", 12), command=self.search_thread)
         self.search_button.grid(
             row=0, column=2, rowspan=3, padx=10, sticky="ns")
 
@@ -83,10 +83,13 @@ class MusicDownloaderView:
 
         self.downloads_listbox.bind('<Double-1>', self.remove_song)
 
-        # Botones agregar y eliminar debajo de los listboxes
+        # Botones agregar, seleccionar todo y eliminar debajo de los listboxes
         self.add_button = tk.Button(self.main_frame, text="Agregar", font=(
             "Arial", 12), command=self.add_song)
         self.add_button.grid(row=6, column=0, pady=10)
+        self.select_all_button = tk.Button(self.main_frame, text="Seleccionar todo", font=(
+            "Arial", 12), command=self.select_all_results)
+        self.select_all_button.grid(row=6, column=1, pady=10)
         self.remove_button = tk.Button(self.main_frame, text="Eliminar", font=(
             "Arial", 12), command=self.remove_song)
         self.remove_button.grid(row=6, column=2, pady=10)
@@ -103,6 +106,25 @@ class MusicDownloaderView:
             self.main_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.grid(row=8, column=0, columnspan=3, pady=(10, 0))
         self.progress_bar.grid_remove()
+
+        # Agrega el label de estado al final del constructor
+        self.status_label = tk.Label(
+            self.main_frame, text="", font=("Arial", 12), fg="blue")
+        self.status_label.grid(row=9, column=0, columnspan=3, pady=(5, 0))
+
+    def select_all_results(self):
+        for i, result in enumerate(self.controller.last_results):
+            format_selected = self.format_var.get()
+            format_str = "(MP3)" if format_selected == "mp3" else "(MP4)"
+            display_str = f"{format_str} {result.get('artist', '')} - {result.get('title', '')}"
+            if display_str not in [song["display"] for song in self.song_list]:
+                self.song_list.append({
+                    "artist": result.get("artist", ""),
+                    "title": result.get("title", ""),
+                    "format": format_selected,
+                    "display": display_str
+                })
+                self.downloads_listbox.insert(tk.END, display_str)
 
     def show_cover(self, image_url):
         try:
@@ -130,6 +152,12 @@ class MusicDownloaderView:
                 else:
                     self.cover_label.config(image='', text='Sin imagen')
 
+    def search_thread(self):
+        self.search_button.config(state=tk.DISABLED)
+        self.status_label.config(
+            text="Obteniendo datos...")  # Muestra el mensaje
+        threading.Thread(target=self.search, daemon=True).start()
+
     def search(self):
         query = self.search_entry.get().strip()
         artist = self.artist_entry.get().strip()
@@ -148,7 +176,6 @@ class MusicDownloaderView:
             return
 
         self.results_listbox.delete(0, tk.END)
-        # <-- Guarda los resultados en el controlador
         self.controller.last_results = results
         for i, result in enumerate(results):
             display_artist = result.get('artist', '')
@@ -157,6 +184,9 @@ class MusicDownloaderView:
                 tk.END, f"{display_artist} - {display_title}")
             if i == 0 and result.get('cover_url'):
                 self.show_cover(result['cover_url'])
+
+        self.status_label.config(text="")  # Oculta el mensaje al finalizar
+        self.search_button.config(state=tk.NORMAL)
 
     def add_song(self, event=None):
         selected = self.results_listbox.curselection()
@@ -194,14 +224,10 @@ class MusicDownloaderView:
         if not self.save_path:
             self.progress_bar.grid_remove()
             return
-        for i, song in enumerate(self.song_list):
-            self.progress_var.set(0)
-            try:
-                self.controller.download_song(
-                    song["title"], song["artist"], self.save_path, self.progress_hook, song["format"])
-                self.update_listbox(i)
-            except ValueError as e:
-                messagebox.showerror("Error", str(e))
+        # Descarga en paralelo
+        self.controller.download_multiple_songs(
+            self.song_list, self.save_path, self.progress_hook
+        )
         messagebox.showinfo("Completado", "Descarga finalizada.")
         self.downloads_listbox.delete(0, tk.END)
         self.song_list.clear()

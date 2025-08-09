@@ -2,6 +2,11 @@ import yt_dlp
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+import threading
+import concurrent.futures
+
+MAX_WORKERS = 16  # Número máximo de hilos para descargar canciones
+
 
 class MusicDownloaderController:
     def __init__(self, model, client_id=None, client_secret=None):
@@ -19,14 +24,20 @@ class MusicDownloaderController:
     def search(self, query):
         # Busca localmente
         results = self.model.search(query)
+        # Si es una playlist de youtube
+        if query.startswith("https://www.youtube.com/playlist") or query.startswith("https://youtu.be/playlist"):
+            youtube_results = self.search_youtube_playlist(query)
+            results.extend(youtube_results)
         # Si es una url de youtube
-        if query.startswith("https://youtu.be/") or query.startswith("https://www.youtube.com/"):
+        elif query.startswith("https://youtu.be/") or query.startswith("https://www.youtube.com/"):
             youtube_results = self.search_youtube_url(query)
             results.extend(youtube_results)
-        elif self.spotify_api:  # Si hay Spotify disponible, busca también en Spotify y agrega resultados
+        # Si hay Spotify disponible, busca también en Spotify y agrega resultados
+        elif self.spotify_api:
             spotify_results = self.model.fetch_spotify_metadata(
                 self.spotify_api, query)
             results.extend(spotify_results)
+
         return results
 
     def search_by_artist_title(self, artist, title):
@@ -107,10 +118,26 @@ class MusicDownloaderController:
         except Exception as e:
             print(f"[ERROR] yt_dlp falló: {e}")
 
+    def download_multiple_songs(self, song_list, save_path, progress_hook, max_workers=MAX_WORKERS):
+        """
+        Descarga varias canciones en paralelo usando un pool de hilos.
+        song_list: lista de dicts con keys 'title', 'artist', 'format'
+        """
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = []
+            for song in song_list:
+                futures.append(executor.submit(
+                    self.download_song,
+                    song["title"],
+                    song["artist"],
+                    save_path,
+                    progress_hook,
+                    song["format"]
+                ))
+            concurrent.futures.wait(futures)
+
     def search_youtube_url(self, url):
         """Obtiene metadatos de un video de YouTube por URL."""
-        if not (url.startswith("https://youtu.be/") or url.startswith("https://www.youtube.com/")):
-            return []
         ydl_opts = {'quiet': True, 'skip_download': True}
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -125,6 +152,38 @@ class MusicDownloaderController:
             return [result]
         except Exception as e:
             print(f"Error obteniendo metadatos de YouTube: {e}")
+            return []
+
+    def search_youtube_playlist(self, playlist_url, max_workers=MAX_WORKERS):
+        """Obtiene metadatos de todos los videos de una playlist de YouTube en paralelo y los agrega al modelo."""
+        ydl_opts = {'quiet': True, 'skip_download': True}
+        results = []
+        seen = set()
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(playlist_url, download=False)
+                entries = info.get('entries', [])
+
+                def process_entry(entry):
+                    key = (entry.get('title', '').lower(),
+                           entry.get('uploader', '').lower())
+                    if key in seen:
+                        return
+                    seen.add(key)
+                    result = {
+                        'artist': entry.get('uploader', ''),
+                        'title': entry.get('title', ''),
+                        'cover_url': entry.get('thumbnail', ''),
+                        'youtube_url': entry.get('webpage_url', '')
+                    }
+                    results.append(result)
+                    self.model.fetch_youtube_metadata(result)
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    executor.map(process_entry, entries)
+            return results
+        except Exception as e:
+            print(f"Error obteniendo playlist: {e}")
             return []
 
     def get_youtube_url(self, title, artist):
