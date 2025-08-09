@@ -4,6 +4,7 @@ from tkinter import messagebox, filedialog, ttk
 import requests
 from PIL import Image, ImageTk
 from io import BytesIO
+import time
 
 
 class MusicDownloaderView:
@@ -224,11 +225,16 @@ class MusicDownloaderView:
         if not self.save_path:
             self.progress_bar.grid_remove()
             return
+
+        # Inicia temporizador
+        start_time = time.time()
         # Descarga en paralelo
         self.controller.download_multiple_songs(
             self.song_list, self.save_path, self.progress_hook
         )
-        messagebox.showinfo("Completado", "Descarga finalizada.")
+        elapsed_time = time.time() - start_time
+        messagebox.showinfo(
+            "Completado", f"Descarga finalizada en {elapsed_time:.2f} segundos.")
         self.downloads_listbox.delete(0, tk.END)
         self.song_list.clear()
         self.save_path = None
